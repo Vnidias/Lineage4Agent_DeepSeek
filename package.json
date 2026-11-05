@@ -1,0 +1,60 @@
+{
+  "name": "dsh-lineage",
+  "version": "0.1.0",
+  "description": "Lineage view for DeepSeek Harness: visualize how a chat reached its answer \u2014 turns, steps, tool calls and every subagent branch \u2014 as a swimlane graph.",
+  "author": "Vinicius Dias",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vnidias/Lineage4Agent_DeepSeek.git"
+  },
+  "homepage": "https://github.com/Vnidias/Lineage4Agent_DeepSeek#readme",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "agents",
+    "subagents",
+    "lineage",
+    "visualization"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ],
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test:render": "node scripts/test-render.cjs"
+  }
+}

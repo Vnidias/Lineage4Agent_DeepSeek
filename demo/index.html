@@ -1,0 +1,83 @@
+<!doctype html>
+<!--
+  Standalone demo: runs the real plugin bundle (../lib/client.js) on synthetic data,
+  without DeepSeek Harness. Serve the repository root and open /demo/:
+    python3 -m http.server 8000   ->   http://localhost:8000/demo/          (sidebar page)
+                                       http://localhost:8000/demo/?view=tab (conversation tab)
+  Optional: &select=<node id> preselects a node, &theme=dark uses a dark palette.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>dsh-lineage demo</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+    #app { position: relative; height: 100%; }
+    body.dark { background: #16181d; --dsw-alias-label-primary: #e6e8eb; --dsw-alias-label-secondary: #aab1bb; --dsw-alias-label-tertiary: #7d8590;
+      --dsw-alias-bg-base: #1d2026; --dsw-alias-bg-layer-1: #16181d; --dsw-alias-bg-layer-2: #262a31; --dsw-alias-border-l1: rgba(255,255,255,.08);
+      --dsw-alias-border-l2: rgba(255,255,255,.16); --dsw-alias-interactive-bg-hover: rgba(255,255,255,.06); }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="./fixture.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    // Minimal stand-in for the shell's module loader: capture the plugin factory.
+    let factory;
+    window.__ModuleLoader__ = { load: (m) => { factory = m.factory; } };
+  </script>
+  <script src="../lib/client.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    if (params.get('theme') === 'dark') document.body.classList.add('dark');
+    const plugin = factory((id) => {
+      if (id === 'react') return window.React;
+      throw new Error('demo: unexpected module ' + id);
+    });
+    const { sessions, catalogs, list, titles } = window.LINEAGE_FIXTURE;
+    const ok = (value) => ({ ok: true, value });
+    const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+    const registrations = {};
+    // Fake client context exposing exactly the services the plugin injects.
+    const ctx = {
+      effect: (fn) => fn(),
+      locale: { register: () => () => {}, bind: () => (k) => ({ 'view.lineage': 'Lineage', panel: 'Lineage' }[k] ?? k) },
+      slots: {
+        inject: (_name, fn) => fn(),
+        register: (def, Comp) => { registrations[def.name + ':' + (def.id ?? def.key)] = { def, Comp }; return () => {}; },
+      },
+      uiWorkspace: { openSession: (a) => alert('Open conversation: ' + JSON.stringify(a)) },
+      remote: {
+        session: {
+          async page({ address }) {
+            await delay(60);
+            const id = address.kind === 'session' ? address.sessionId : address.childSessionId;
+            return ok({ cursor: 0, hasMore: false, records: (sessions[id] ?? []).map((event) => ({ type: 'event', event })) });
+          },
+          async projections({ sessionId }) {
+            return ok({ kind: 'sequenced', asOfSeq: 1, values: { subagentCatalog: catalogs[sessionId] ?? [], title: titles[sessionId] ?? null } });
+          },
+          async list() { return ok({ items: list }); },
+        },
+      },
+    };
+    plugin.apply(ctx);
+    const view = params.get('view') === 'tab'
+      ? registrations['conversation.view:lineage']
+      : registrations['main:lineage'];
+    const props = view.def.name === 'conversation.view' ? { ...view.def.inject(params.get('session') ?? 'root') } : { ...view.def.inject() };
+    ReactDOM.createRoot(document.getElementById('app')).render(React.createElement(view.Comp, props));
+    // Optional preselection for screenshots: click the node whose title matches.
+    const select = params.get('select');
+    if (select) {
+      const tryClick = (n = 0) => {
+        const node = [...document.querySelectorAll('.dl-node')].find((el) => el.querySelector('.dl-node-title')?.textContent === select);
+        if (node) node.click(); else if (n < 50) setTimeout(() => tryClick(n + 1), 100);
+      };
+      tryClick();
+    }
+  </script>
+</body>
+</html>

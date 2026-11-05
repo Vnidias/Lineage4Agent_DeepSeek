@@ -1,0 +1,5 @@
+# dsh-lineage bundle patch: mounts the plugin row when the package is selected
+# in the profile's `dsh.profile.bundles` (done automatically by the plugin manager).
+- insert:
+    - id: lineage
+      name: 'dsh-lineage'
