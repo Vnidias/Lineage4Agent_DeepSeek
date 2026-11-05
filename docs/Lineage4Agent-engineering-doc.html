@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lineage4Agent</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   Engineering Doc Kit - base stylesheet (all components, spacing rules, @page)
+   Themes only override the accent family, --hue2 and --display.
+   ========================================================================== */
+
+/* ---------- Tokens ---------- */
+:root{
+  --ink:#0F172A; --text:#334155; --muted:#64748B; --faint:#94A3B8; --line:#E2E8F0; --card:#F8FAFC; --page:#FFFFFF;
+  /* accent family (defaults = indigo; themes override) */
+  --accent:#4338CA; --accent-900:#312E81; --accent-500:#6366F1; --accent-300:#A5B4FC; --accent-100:#E0E7FF; --accent-50:#EEF2FF;
+  --hue2:#D97706;
+  --good:#15803D; --good-bg:#DCFCE7; --warn:#B45309; --warn-bg:#FEF3C7; --crit:#B91C1C; --crit-bg:#FEE2E2;
+  --warn-soft:#FFFBEB; --warn-ink:#78350F;
+  --display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  /* chart / diagram series palette, derived from the theme */
+  --c1:var(--accent); --c2:var(--accent-300); --c3:var(--accent-900); --c4:var(--hue2); --c5:var(--muted); --c6:var(--faint);
+  /* 4px spacing scale */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  --radius:12px;
+}
+
+*{box-sizing:border-box}
+html{background:#fff}
+body{overflow-wrap:break-word;margin:0;background:var(--page);color:var(--text);font:9.5pt/1.5 var(--body);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1,h2,h3,h4{font-family:var(--display);color:var(--ink);margin:0;line-height:1.2}
+p{margin:0 0 var(--s2);orphans:3;widows:3}
+li{orphans:3;widows:3}
+strong,b{color:var(--ink)}
+a{color:var(--accent);text-decoration:none}
+code{font:8.5pt var(--mono);background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 var(--s1);color:var(--ink);overflow-wrap:anywhere;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone}
+code.nw{white-space:nowrap}
+pre{margin:0 0 var(--s4);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:var(--s3) var(--s4);
+  font:8.5pt/1.5 var(--mono);color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+pre code{border:0;background:none;padding:0;font:inherit}
+ul,ol{margin:0 0 var(--s2);padding-left:18px}
+li{margin-bottom:var(--s1)}
+svg.i{width:1em;height:1em;flex:none}
+
+/* ---------- Page model ---------- */
+@page{size:A4;margin:18mm 14mm 16mm;
+  @top-left{content:"";font:8pt var(--body);color:#94A3B8}
+  @top-right{content:"";font:8pt var(--body);color:#94A3B8}
+  @bottom-left{content:"";font:8pt var(--body);color:#94A3B8}
+  @bottom-right{content:counter(page) " / " counter(pages);font:8pt var(--body);color:#64748B}
+}
+@page cover{margin:0;
+  @top-left{content:none} @top-right{content:none} @bottom-left{content:none} @bottom-right{content:none}}
+@media screen{
+  html{background:var(--line)}
+  body{max-width:210mm;margin:24px auto;box-shadow:0 0 0 1px var(--line),0 20px 60px rgba(15,23,42,.12)}
+  .flow{padding:18mm 14mm 16mm}
+  .chapter.pagebreak{border-top:8px solid var(--line);margin-top:0}
+}
+@media print{ body{margin:0} }
+
+/* ---------- Sections never split across pages ---------- */
+.doc-section{break-inside:avoid;page-break-inside:avoid}
+.sec-head{position:relative}
+.anchor-ref{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden}
+.sec-end{display:block;height:1px;margin:0;overflow:hidden;text-decoration:none}
+a.ref{color:inherit;text-decoration:none;border-bottom:1px dotted var(--accent-300)}
+a.id.ref{border-bottom:0}
+a.id{text-decoration:none}
+
+/* ---------- Chapter + section headings ---------- */
+.chapter.pagebreak{break-before:page}
+.chapter.pagebreak > .sec-head:first-child{margin-top:0}
+.sec-head{display:flex;align-items:flex-end;gap:14px;margin:var(--s6) 0 var(--s4);padding-bottom:var(--s3);
+  border-bottom:2px solid var(--ink);break-after:avoid;break-inside:avoid}
+.sec-num{font:700 30pt/1 var(--display);color:var(--accent-100);-webkit-text-stroke:1px var(--accent)}
+.sec-head h2{font-size:20pt;font-weight:700;letter-spacing:-.01em}
+.sec-head .lead{margin:var(--s1) 0 0;color:var(--muted);font-size:9.5pt}
+.sub-head{break-after:avoid;break-inside:avoid;display:flex;align-items:center;gap:var(--s2);margin:var(--s5) 0 var(--s2)}
+.sec-head + .sub-head,.sec-head + .doc-section > .sub-head:first-child{margin-top:0}
+.sub-head h3{font-size:12.5pt;font-weight:600}
+.sub-head .n{font:600 8.5pt var(--mono);color:#fff;background:var(--accent);border-radius:6px;padding:var(--s1) var(--s2);line-height:1.2}
+h4.minor{font:600 10pt/1.2 var(--display);color:var(--ink);margin:var(--s4) 0 var(--s2);break-after:avoid}
+.small-label{font:600 8pt var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;break-after:avoid}
+
+/* label + value pairs */
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:var(--s2) var(--s4);margin:0 0 var(--s4);font-size:9pt}
+.kv dt{font-weight:600;color:var(--ink)}
+.kv dd{margin:0}
+
+/* ---------- Tables ---------- */
+/* separate + 0 spacing: collapsed borders leave hairline seams beside the rounded header cells in Chromium PDFs */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:8.5pt;margin:0 0 var(--s4);break-inside:auto}
+thead{display:table-header-group}
+thead th{background:var(--ink);color:#fff;font-weight:600;text-align:left;padding:7px 9px;vertical-align:bottom;
+  box-shadow:1px 0 0 var(--ink)} /* fills the anti-aliasing seam between header cells; horizontal only, so no grey edge above the row */
+thead th:last-child{box-shadow:none}
+thead th:first-child{border-top-left-radius:8px}
+thead th:last-child{border-top-right-radius:8px}
+tbody td{padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word}
+tbody tr:nth-child(even) td{background:var(--card)}
+tr{break-inside:avoid}
+td.c-id,td.c-status,td.c-short{white-space:nowrap}
+td.c-id .id{margin-bottom:2px}
+.id{display:inline-block;font:600 8pt/1.5 var(--mono);color:var(--accent-900);background:var(--accent-50);border:1px solid var(--accent-100);
+  border-radius:6px;padding:0 6px;margin-right:var(--s1)}
+.id:last-child{margin-right:0}
+.id.sec{color:var(--muted);background:var(--card);border-color:var(--line)}
+.badge{display:inline-block;font:600 8pt/1.5 var(--body);letter-spacing:.04em;text-transform:uppercase;padding:0 var(--s2);border-radius:999px;white-space:nowrap}
+.b-good{background:var(--good-bg);color:var(--good)}
+.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-crit{background:var(--crit-bg);color:var(--crit)}
+.b-info{background:var(--accent-100);color:var(--accent-900)}
+.b-muted{background:#F1F5F9;color:var(--muted)}
+
+/* ---------- Callouts ---------- */
+blockquote{margin:var(--s3) 0;padding:var(--s2) var(--s3);border-left:3px solid var(--faint);background:var(--card);border-radius:0 8px 8px 0;font-size:9pt;break-inside:avoid}
+blockquote p:last-child{margin-bottom:0}
+blockquote.callout.note{border-color:var(--accent);background:var(--accent-50);color:var(--accent-900)}
+blockquote.callout.warning{border-color:var(--warn);background:var(--warn-soft);color:var(--warn-ink)}
+.callout-label{display:inline-block;font:600 8pt/1.5 var(--body);letter-spacing:.1em;text-transform:uppercase;margin-right:var(--s2)}
+blockquote.callout.note .callout-label{color:var(--accent)}
+blockquote.callout.warning .callout-label{color:var(--warn)}
+
+/* ---------- Cards, KPIs, steps, stack ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px var(--s4);break-inside:avoid}
+.cards{display:grid;gap:var(--s3);margin:0 0 var(--s4)}
+.cards.cols-1{grid-template-columns:1fr} .cards.cols-2{grid-template-columns:1fr 1fr} .cards.cols-3{grid-template-columns:repeat(3,1fr)}
+.card.has-icon{display:flex;gap:10px;align-items:flex-start}
+.card .ci{flex:none;width:20px;height:20px;color:var(--accent);margin-top:1px}
+.card .ci svg{width:20px;height:20px;display:block}
+.card h4{margin:0 0 var(--s1);font:600 9.5pt/1.3 var(--body);color:var(--ink)}
+.card p{margin:0;font-size:9pt}
+
+.kpis{display:grid;gap:10px;margin:0 0 var(--s4)}
+.kpis.cols-1{grid-template-columns:1fr} .kpis.cols-2{grid-template-columns:repeat(2,1fr)} .kpis.cols-3{grid-template-columns:repeat(3,1fr)} .kpis.cols-4{grid-template-columns:repeat(4,1fr)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s3) 14px;break-inside:avoid}
+.kpi .v{font:700 22pt/1.1 var(--display);color:var(--accent);overflow-wrap:anywhere}
+.kpi .l{font-size:8.5pt;color:var(--muted);margin-top:var(--s1)}
+
+.steps{list-style:none;margin:0 0 var(--s4);padding:0;break-inside:avoid}
+.steps > li{display:grid;grid-template-columns:30px 1fr;gap:var(--s2) 10px;position:relative;padding-bottom:var(--s4);margin:0;break-inside:avoid}
+.steps > li:last-child{padding-bottom:0}
+.steps > li:not(:last-child)::after{content:"";position:absolute;left:14px;top:34px;bottom:var(--s1);width:2px;background:var(--accent-100)}
+.steps .sn{width:30px;height:30px;border-radius:50%;background:var(--accent-900);color:#fff;display:flex;align-items:center;justify-content:center;font:600 9pt var(--mono)}
+.steps .sn svg{width:15px;height:15px}
+.steps h4{margin:var(--s1) 0 var(--s1);font:700 9.5pt/1.3 var(--display);color:var(--accent)}
+.steps h4 em{font:600 8pt var(--body);font-style:normal;color:var(--accent-500);margin-right:var(--s2)}
+.steps p{margin:0;font-size:9pt}
+
+.stack-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 var(--s4)}
+.stack-item{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;break-inside:avoid}
+.stack-item .ic{width:30px;height:30px;border-radius:8px;background:var(--accent-50);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.stack-item .ic svg{width:16px;height:16px}
+.stack-item b{display:block;font-size:9pt;color:var(--ink);line-height:1.3}
+.stack-item span.d{display:block;font-size:8pt;color:var(--muted);line-height:1.4;margin-top:2px;overflow-wrap:anywhere}
+
+/* ---------- Figures ---------- */
+.fig{border:1px solid var(--line);border-radius:var(--radius);padding:var(--s3) var(--s3) var(--s2);break-inside:avoid;margin:var(--s2) 0 14px;background:#fff}
+.fig svg.chart{display:block;width:100%;height:auto}
+.fig > svg{display:block;width:100%;height:auto}
+.fig .fig-title{margin-bottom:6px}
+.cap{font-size:8pt;color:var(--muted);margin:6px 0 0;line-height:1.5}
+.cap b{color:var(--ink)}
+
+/* ---------- Chips (built with) ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.chip{background:#fff;border:1px solid var(--accent-100);color:var(--accent-900);font:600 8pt/1.5 var(--body);padding:var(--s1) var(--s3);border-radius:999px}
+
+/* ==========================================================================
+   PAGE 1 - one-pager (fixed A4 page, no margin boxes)
+   ========================================================================== */
+.page1{page:cover;position:relative;width:210mm;height:296.6mm;overflow:hidden;padding:12mm 14mm 10mm;display:flex;flex-direction:column;
+  background:linear-gradient(var(--accent-50),#fff 40%);break-after:page}
+.page1 .deco{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;pointer-events:none;color:var(--accent-500)}
+.page1 > *:not(.deco){position:relative;z-index:1}
+.page1 h1{font:700 46pt/1 var(--display);color:var(--accent-900);letter-spacing:-.015em;text-align:center;margin:var(--s3) 0 var(--s3);overflow-wrap:anywhere}
+.page1 .sub{text-align:center;font:500 10.5pt/1.5 var(--body);color:var(--text);max-width:150mm;margin:0 auto var(--s3)}
+.page1 .meta{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:var(--s2) var(--s4);font-size:8pt;color:var(--muted);
+  padding:var(--s2) 0;border-top:1px solid var(--accent-100);border-bottom:1px solid var(--accent-100);margin-bottom:var(--s4)}
+.page1 .meta span{display:inline-flex;align-items:baseline}
+.page1 .meta span b{font-weight:600;color:var(--ink);margin-left:6px}
+.page1 .meta .mono,.mono{font-family:var(--mono);font-size:8pt}
+.page1 .meta .mono{color:var(--accent-900)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5);flex:1 0 auto;align-items:stretch}
+.col{display:flex;flex-direction:column;gap:var(--s5);min-width:0}
+.pill{display:table;align-self:flex-start;background:var(--accent-900);color:#fff;font:600 10.5pt/1.2 var(--display);padding:var(--s2) var(--s4);border-radius:999px;margin-bottom:var(--s2)}
+.ov p{font-size:9pt;line-height:1.5}
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2) var(--s4);font-size:8pt;line-height:1.5}
+.toc a{display:flex;gap:var(--s2);min-width:0;color:inherit;text-decoration:none}
+.toc a b{font:600 8pt/1.5 var(--mono);color:var(--accent-500);flex:none;min-width:20px}
+.prob{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+.prob .card{padding:var(--s4);background:rgba(255,255,255,.85);border-color:var(--accent-100)}
+.prob h4{margin:0 0 var(--s1);font:700 9pt/1.3 var(--display);color:var(--accent)}
+.prob p{font-size:8.5pt;line-height:1.5}
+.obj{display:grid;grid-template-columns:30px 1fr;gap:var(--s2) 10px;align-items:center;padding:var(--s3) 0;border-bottom:1px solid var(--accent-100)}
+.obj:first-child{padding-top:0}
+.obj:last-child{padding-bottom:0;border-bottom:0}
+.obj .ic,.step .ic{width:30px;height:30px;border-radius:50%;background:var(--accent-100);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.obj .ic svg,.step .ic svg{width:15px;height:15px}
+.obj h4,.step h4{margin:0 0 var(--s1);font:700 9pt/1.3 var(--display);color:var(--accent)}
+.obj h4 em,.step h4 em{font:600 8pt var(--body);letter-spacing:.02em;font-style:normal;color:var(--accent-500);margin-right:var(--s2)}
+.obj p,.step p{font-size:8.5pt;line-height:1.5;margin:0}
+.col:first-child{justify-content:space-between}
+.col:last-child > section:last-child{flex:1;display:flex;flex-direction:column}
+.flowsteps{display:flex;flex-direction:column;flex:1}
+.step{display:grid;grid-template-columns:30px 1fr;gap:var(--s2) 10px;position:relative;padding-bottom:var(--s4)}
+.step:not(:last-child){flex:1}
+.step:last-child{padding-bottom:0}
+.step:not(:last-child)::after{content:"";position:absolute;left:14px;top:36px;bottom:4px;width:2px;background:var(--accent-100)}
+.step .ic{background:var(--accent-900);color:#fff}
+.page1 .foot{display:flex;justify-content:space-between;margin-top:auto;padding-top:var(--s4);font-size:8pt;color:var(--muted)}
+/* automatic compaction levels (added by script only when page 1 overflows) */
+.page1.compact-1 .obj{padding:10px 0} .page1.compact-1 .step{padding-bottom:var(--s3)}
+.page1.compact-2 .col{gap:var(--s4)} .page1.compact-2 .obj{padding:var(--s2) 0} .page1.compact-2 .step{padding-bottom:var(--s3)}
+.page1.compact-2 .meta{margin-bottom:var(--s3)} .page1.compact-2 .pill{margin-bottom:6px}
+.page1.compact-3 .ov p,.page1.compact-3 .obj p,.page1.compact-3 .step p,.page1.compact-3 .prob p{font-size:8pt}
+.page1.compact-3 .prob .card{padding:var(--s3)} .page1.compact-3 .col{gap:var(--s3)}
+
+/* ---------- Print rules ---------- */
+@media print{
+  html,body{background:#fff}
+  .card,.fig,.kpi,.stack-item,blockquote,.steps > li,tr{break-inside:avoid}
+}
+
+/* keep an introducing paragraph with the block that follows it */
+p:has(+ .steps),p:has(+ .cards),p:has(+ .kpis),p:has(+ .stack-row),p:has(+ .fig),p:has(+ table),p:has(+ pre){break-after:avoid}
+
+/* Teal theme: token overrides only */
+:root{
+  --accent:#0F766E; --accent-900:#134E4A; --accent-500:#14B8A6; --accent-300:#5EEAD4; --accent-100:#CCFBF1; --accent-50:#F0FDFA;
+  --display:'Poppins','Inter',system-ui,sans-serif;
+}
+
+@page{
+  @top-left{content:"Lineage4Agent"}
+  @top-right{content:"Project documentation · v0.1.0"}
+  @bottom-left{content:"Prepared by Vinicius Dias · November 2026"}
+}
+</style>
+</head>
+<body data-theme="teal">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+ <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+ <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 9h10M7 12h10M7 15h6"/></symbol>
+ <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
+ <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+ <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H8a5 5 0 1 1 1.3-9.8A6 6 0 0 1 20.8 12 3.5 3.5 0 0 1 17.5 19z"/></symbol>
+ <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+ <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
+ <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></symbol>
+ <symbol id="i-sheet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+ <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+ <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+ <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+ <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+ <symbol id="i-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.6 6.5a3 3 0 0 0 .4-1.4M6 5.1a3 3 0 0 0 .4 1.4M3.5 10.9a4 4 0 0 1 .6-.4M19.9 10.5a4 4 0 0 1 .6.4M6 18a4 4 0 0 1-2-.5M20 17.5a4 4 0 0 1-2 .5"/></symbol>
+ <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+ <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 18v-3M12 18v-6M16 18v-4"/></symbol>
+ <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+ <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/><circle cx="12" cy="12" r="7"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></symbol>
+</defs></svg>
+
+<section class="page1" id="page1">
+  <svg class="deco" viewBox="0 0 794 1123" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+    <g opacity=".09">
+      <path d="M-20 160C120 110 200 220 340 170S560 90 820 160"/><path d="M-20 180C120 130 200 240 340 190S560 110 820 180"/>
+      <path d="M-20 200C120 150 200 260 340 210S560 130 820 200"/><path d="M-20 220C120 170 200 280 340 230S560 150 820 220"/>
+      <path d="M-20 240C120 190 200 300 340 250S560 170 820 240"/><path d="M-20 260C120 210 200 320 340 270S560 190 820 260"/>
+    </g>
+    <g opacity=".08">
+      <path d="M-20 1010C160 950 300 1090 470 1020S700 940 820 990"/><path d="M-20 1030C160 970 300 1110 470 1040S700 960 820 1010"/>
+      <path d="M-20 1050C160 990 300 1130 470 1060S700 980 820 1030"/><path d="M-20 1070C160 1010 300 1150 470 1080S700 1000 820 1050"/>
+    </g>
+  </svg>
+
+  <h1 style="font-size:46pt">Lineage4Agent</h1>
+  <p class="sub">A DeepSeek Harness plugin that draws how an agent reached its answer, step by step and subagent by subagent.</p>
+  <div class="meta">
+    <span>Owner<b>Vinicius Dias</b></span>
+    <span>Repo<b class="mono">github.com/Vnidias/Lineage4Agent_DeepSeek</b></span>
+    <span>Commit<b class="mono">14e58df</b></span>
+    <span>Date<b>5 November 2026</b></span>
+    <span class="badge b-warn">Prototype</span>
+  </div>
+
+  <div class="cols">
+    <div class="col">
+      <section class="blk ov" id="sec-1-1">
+        <div class="pill">Overview</div>
+        <p>Lineage4Agent (package <code class="nw">dsh-lineage</code>) is a DeepSeek Harness Web GUI plugin that shows a conversation as a swimlane graph: the prompt, every step and tool call, each subagent and the results that came back. It adds a Lineage tab to every chat and a Lineage button next to Automation tasks. It only reads existing logs.</p>
+
+      </section>
+      <section class="blk">
+        <div class="pill">Contents</div>
+        <div class="toc"><a href="#sec-1-1"><b>1.1</b>Theme</a><a href="#sec-1-2"><b>1.2</b>Problem to be solved</a><a href="#sec-1-3"><b>1.3</b>Objectives</a><a href="#sec-2-1"><b>2.1</b>General architecture</a><a href="#sec-2-2"><b>2.2</b>Stack</a><a href="#sec-2-3"><b>2.3</b>Data flow and layout</a><a href="#sec-2-4"><b>2.4</b>Module details</a><a href="#sec-2-5"><b>2.5</b>Tests</a><a href="#sec-2-6"><b>2.6</b>Results</a><a href="#sec-2-7"><b>2.7</b>Future improvements</a><a href="#sec-3"><b>3</b>Risks and open questions</a><a href="#glossary"><b>A</b>Glossary</a>
+        </div>
+      </section>
+      
+      <section class="blk" id="sec-1-2">
+        <div class="pill">Problem to be solved</div>
+        <div class="prob"><div class="card"><h4>Answers hide their path</h4><p>The chat shows the final answer, not the chain of steps behind it.</p></div><div class="card"><h4>Subagents are scattered</h4><p>Child agents live in separate chats, so the full tree is hard to follow.</p></div><div class="card"><h4>Flat event ledgers</h4><p>The Trajectory view lists events of one session, with no cross-agent links.</p></div><div class="card"><h4>Slow debugging</h4><p>Finding which step or tool failed means reading long transcripts.</p></div>
+        </div>
+      </section>
+      
+      
+      <section class="blk">
+        <div class="pill">Built with</div>
+        <div class="chips"><span class="chip">JavaScript</span><span class="chip">React 18 (shell)</span><span class="chip">DeepSeek Harness client plugins</span><span class="chip">SVG</span></div>
+      </section>
+      
+    </div>
+
+    <div class="col">
+      
+      <section class="blk" id="sec-1-3">
+        <div class="pill">Objectives</div>
+        <div><div class="obj" id="o1"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-chart"/></svg></div><div><h4><em>O1</em>Per-chat lineage</h4><p>A Lineage tab that draws the open chat as a graph.</p></div></div><div class="obj" id="o2"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-search"/></svg></div><div><h4><em>O2</em>Sidebar entry</h4><p>A Lineage button after Automation tasks to browse any chat.</p></div></div><div class="obj" id="o3"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-users"/></svg></div><div><h4><em>O3</em>Subagent branches</h4><p>Show every subagent at any depth, linked to its parent step.</p></div></div><div class="obj" id="o4"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-report"/></svg></div><div><h4><em>O4</em>Step details</h4><p>Show text, reasoning, tool calls, timing and tokens per card.</p></div></div><div class="obj" id="o5"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-target"/></svg></div><div><h4><em>O5</em>Turn focus</h4><p>Isolate one question and its answer, with the agents that fed it.</p></div></div><div class="obj" id="o6"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-lock"/></svg></div><div><h4><em>O6</em>Read only</h4><p>Use existing Host read APIs and never write to a session.</p></div></div><div class="obj" id="o7"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-box"/></svg></div><div><h4><em>O7</em>No build toolchain</h4><p>Ship one bundle with no runtime dependencies.</p></div></div></div>
+      </section>
+      
+      
+      <section class="blk">
+        <div class="pill">How it works</div>
+        <div class="flowsteps">
+          <div class="step"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-search"/></svg></div><div><h4><em>1</em>Open a chat</h4><p>Use the Lineage tab of a chat, or the Lineage button in the sidebar.</p></div></div>
+          <div class="step"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-db"/></svg></div><div><h4><em>2</em>Read the logs</h4><p>Each agent&#39;s log and its subagent list are read.</p></div></div>
+          <div class="step"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-gear"/></svg></div><div><h4><em>3</em>Fold into steps</h4><p>Events become prompt, step, answer and result cards.</p></div></div>
+          <div class="step"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-link"/></svg></div><div><h4><em>4</em>Link the agents</h4><p>Each subagent is tied to the step that created it.</p></div></div>
+          <div class="step"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-chart"/></svg></div><div><h4><em>5</em>Inspect</h4><p>Click any card for text, tool calls, timing and tokens.</p></div></div>
+        </div>
+      </section>
+      
+    </div>
+  </div>
+
+  <div class="foot"><span>Prepared by Vinicius Dias</span><span>Page 1</span></div>
+</section>
+<main class="flow">
+<section class="chapter pagebreak">
+<div class="sec-head"><div class="sec-num">02</div><div><h2 id="sec-2">Development</h2><a class="anchor-ref" href="#sec-2" aria-hidden="true" tabindex="-1"></a><p class="lead">Engineering view: how Lineage4Agent is built, run and tested.</p></div></div>
+<section class="doc-section" data-sec="2.1" data-label="General architecture" data-anchor="sec-2-1">
+<div class="sub-head"><span class="n">2.1</span><h3 id="sec-2-1">General architecture</h3></div>
+<p>The plugin runs only in the browser. Two entry points render the same graph component. A data module reads logs through the shell's typed Remote client, and the Host answers from the session logs on disk.</p>
+<figure class="fig" style="margin-left:0;margin-right:0">
+  <svg viewBox="0 0 700 300" role="img" aria-label="The Lineage tab and the Lineage page feed LineageGraph in ui.js, which uses model.js; model.js calls the Remote client, which reaches the Host session controller; the controller reads the session logs, which are folded into projections.">
+  <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--muted)"/></marker></defs>
+  <rect x="10" y="8" width="680" height="142" rx="12" style="fill:none;stroke:var(--accent);stroke-width:1;stroke-dasharray:5 4"/>
+  <rect x="10" y="180" width="680" height="112" rx="12" style="fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:5 4"/>
+  <g style="font:600 12px Inter,sans-serif;fill:var(--muted)">
+    <text x="22" y="26">Browser: DSH Web GUI</text>
+    <text x="22" y="198">Host: dsh web</text>
+  </g>
+  <g style="font:600 12px Inter,sans-serif;fill:var(--ink)">
+    <rect x="24" y="38" width="140" height="46" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <text x="94" y="58" text-anchor="middle">Lineage tab</text>
+    <text x="94" y="74" text-anchor="middle" style="font-weight:500;fill:var(--muted)">conversation.view</text>
+    <rect x="24" y="96" width="140" height="46" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <text x="94" y="116" text-anchor="middle">Lineage page</text>
+    <text x="94" y="132" text-anchor="middle" style="font-weight:500;fill:var(--muted)">sidebar + main</text>
+    <rect x="200" y="62" width="140" height="56" rx="9" style="fill:var(--accent-100);stroke:var(--accent);stroke-width:1.5"/>
+    <use href="#i-chart" x="262" y="68" width="16" height="16" style="color:var(--accent)"/>
+    <text x="270" y="100" text-anchor="middle">LineageGraph</text>
+    <text x="270" y="113" text-anchor="middle" style="font-weight:500;fill:var(--muted)">ui.js</text>
+    <rect x="376" y="62" width="140" height="56" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <use href="#i-gear" x="438" y="68" width="16" height="16" style="color:var(--accent)"/>
+    <text x="446" y="100" text-anchor="middle">Load, fold, layout</text>
+    <text x="446" y="113" text-anchor="middle" style="font-weight:500;fill:var(--muted)">model.js</text>
+    <rect x="552" y="62" width="126" height="56" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <use href="#i-link" x="607" y="68" width="16" height="16" style="color:var(--accent)"/>
+    <text x="615" y="100" text-anchor="middle">Remote client</text>
+    <text x="615" y="113" text-anchor="middle" style="font-weight:500;fill:var(--muted)">remote.session</text>
+    <rect x="552" y="218" width="126" height="56" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <use href="#i-server" x="607" y="224" width="16" height="16" style="color:var(--accent)"/>
+    <text x="615" y="258" text-anchor="middle">Session controller</text>
+    <rect x="376" y="218" width="140" height="56" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <use href="#i-db" x="438" y="224" width="16" height="16" style="color:var(--accent)"/>
+    <text x="446" y="256" text-anchor="middle">Session logs</text>
+    <text x="446" y="269" text-anchor="middle" style="font-weight:500;fill:var(--muted)">~/.dsh/sessions</text>
+    <rect x="200" y="218" width="140" height="56" rx="9" style="fill:var(--accent-50);stroke:var(--accent);stroke-width:1.5"/>
+    <use href="#i-sheet" x="262" y="224" width="16" height="16" style="color:var(--accent)"/>
+    <text x="270" y="256" text-anchor="middle">Projections</text>
+    <text x="270" y="269" text-anchor="middle" style="font-weight:500;fill:var(--muted)">subagentCatalog, title</text>
+  </g>
+  <g style="stroke:var(--muted);stroke-width:1.5;fill:none">
+    <path d="M164 61L182 61L182 82L200 82" marker-end="url(#ah1)"/>
+    <path d="M164 119L182 119L182 98L200 98" marker-end="url(#ah1)"/>
+    <path d="M340 90L376 90" marker-end="url(#ah1)"/>
+    <path d="M516 90L552 90" marker-end="url(#ah1)"/>
+    <path d="M615 118L615 218" marker-end="url(#ah1)"/>
+    <path d="M552 246L516 246" marker-end="url(#ah1)"/>
+    <path d="M376 246L340 246" marker-end="url(#ah1)"/>
+  </g>
+  <g style="font:500 12px Inter,sans-serif;fill:var(--muted)">
+    <text x="606" y="162" text-anchor="end">session/list, session/page,</text>
+    <text x="606" y="176" text-anchor="end">session/projections</text>
+    <text x="534" y="238" text-anchor="middle">reads</text>
+    <text x="358" y="238" text-anchor="middle">folds</text>
+  </g>
+</svg><figcaption class="cap"><b>Figure 1.</b> Runtime architecture: two entry points, one graph component and three read-only Host calls.</figcaption>
+</figure><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Component</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="c-short">Entry points</td>
+<td><code class="nw">conversation.view</code> tab, <code class="nw">sidebar.panellist</code> button, <code class="nw">main</code> page</td>
+<td>Where the user opens the view</td>
+</tr>
+<tr>
+<td class="c-short">UI</td>
+<td>LineageGraph, Canvas, Detail (ui.js)</td>
+<td>Cards, edges, toolbar, detail panel</td>
+</tr>
+<tr>
+<td class="c-short">Data</td>
+<td>loadTree, foldSession, buildGraph (model.js)</td>
+<td>Read logs, build nodes, lanes, rows and edges</td>
+</tr>
+<tr>
+<td class="c-short">Transport</td>
+<td>Remote client of the shell</td>
+<td>Typed calls to the Host session controller</td>
+</tr>
+<tr>
+<td class="c-short">Host</td>
+<td>Session controller and persistence</td>
+<td>Serve log pages and projections from disk</td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-sec-2-1" href="#sec-2-1" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="2.2" data-label="Stack" data-anchor="sec-2-2">
+<div class="sub-head"><span class="n">2.2</span><h3 id="sec-2-2">Stack</h3></div>
+<div class="stack-row">
+  <div class="stack-item"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-code"/></svg></div><div><b>JavaScript (ES2022)</b><span class="d">4 source modules, no JSX, no compiler</span></div></div>
+  <div class="stack-item"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-box"/></svg></div><div><b>React 18</b><span class="d">Taken from the shell's shared module table</span></div></div>
+  <div class="stack-item"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-gear"/></svg></div><div><b>DSH client plugin API</b><span class="d">Slots, locale, remote.session, uiWorkspace</span></div></div>
+  <div class="stack-item"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-chart"/></svg></div><div><b>SVG and CSS</b><span class="d">Edges in SVG; styles use --dsw-* tokens</span></div></div>
+  <div class="stack-item"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-server"/></svg></div><div><b>Node.js</b><span class="d">Build script and offline test only</span></div></div>
+  <div class="stack-item"><div class="ic"><svg class="i " aria-hidden="true"><use href="#i-check"/></svg></div><div><b>jsdom and Chromium</b><span class="d">Render test and demo screenshots</span></div></div>
+</div><table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Technology</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="c-short">Host</td>
+<td>DeepSeek Harness (<code class="nw">@deepseek-ai/dsh</code>)</td>
+<td class="c-short">0.2.2-rc.1</td>
+</tr>
+<tr>
+<td class="c-short">UI runtime</td>
+<td>React (provided by the shell)</td>
+<td class="c-short">18</td>
+</tr>
+<tr>
+<td>Plugin package</td>
+<td class="c-short">dsh-lineage</td>
+<td class="c-short">0.1.0</td>
+</tr>
+<tr>
+<td class="c-short">Bundle</td>
+<td>lib/client.js</td>
+<td>67.8 kB, 19.1 kB gzipped</td>
+</tr>
+<tr>
+<td class="c-short">Test tooling</td>
+<td>jsdom, react-dom 18, Node.js</td>
+<td class="c-short">not pinned</td>
+</tr>
+</tbody>
+</table>
+<p>The package has no runtime dependencies and no peer dependencies. React is resolved through the shell's module loader, so the bundle does not include it.</p>
+
+<a class="sec-end" id="end-sec-2-2" href="#sec-2-2" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="2.3" data-label="Data flow and layout" data-anchor="sec-2-3">
+<div class="sub-head"><span class="n">2.3</span><h3 id="sec-2-3">Data flow and layout</h3></div>
+<blockquote class="callout note"><p><span class="callout-label">Adaptation</span>Browser plugin with no jobs or notebooks, so 2.3 describes how logs become a graph and 2.4 describes the source files.</p></blockquote>
+<p>Each time the view opens or refreshes, it runs the same six steps.</p>
+<ol class="steps">
+  <li><div class="sn"><svg class="i " aria-hidden="true"><use href="#i-search"/></svg></div>
+    <div><h4><em>1</em>Resolve the root</h4><p>In the tab, walk parentSessionId up to the root chat.</p></div></li>
+  <li><div class="sn"><svg class="i " aria-hidden="true"><use href="#i-db"/></svg></div>
+    <div><h4><em>2</em>Load the tree</h4><p>Read each log with session/page and its children from subagentCatalog.</p></div></li>
+  <li><div class="sn"><svg class="i " aria-hidden="true"><use href="#i-gear"/></svg></div>
+    <div><h4><em>3</em>Fold events</h4><p>Turn 11 event types into prompt, step, answer and result cards.</p></div></li>
+  <li><div class="sn"><svg class="i " aria-hidden="true"><use href="#i-link"/></svg></div>
+    <div><h4><em>4</em>Link agents</h4><p>Find the step that spawned each child and where its result landed.</p></div></li>
+  <li><div class="sn"><svg class="i " aria-hidden="true"><use href="#i-chart"/></svg></div>
+    <div><h4><em>5</em>Lay out</h4><p>Lanes in depth-first order; rows in time order, below each edge source.</p></div></li>
+  <li><div class="sn"><svg class="i " aria-hidden="true"><use href="#i-repeat"/></svg></div>
+    <div><h4><em>6</em>Refresh</h4><p>Reload every 3 s while any agent still has an open turn.</p></div></li>
+</ol><p>Children of one agent are loaded concurrently, up to 8 levels deep. History seeded into a forked child before its last <code class="nw">session/end-seed</code> marker is dropped, so a fork shows only its own work. Injected context messages (time, runtime and skill catalogs) and finished steps with no output are hidden.</p>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Rule for the spawning step</th>
+<th>Edge style</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="c-short">1</td>
+<td>A tool call whose result or arguments contain the child id</td>
+<td class="c-short">Solid blue</td>
+</tr>
+<tr>
+<td class="c-short">2</td>
+<td>A delegation call whose run window contains the child's creation time</td>
+<td class="c-short">Solid blue</td>
+</tr>
+<tr>
+<td class="c-short">3</td>
+<td>The parent's last card before the child's creation time</td>
+<td class="c-short">Solid blue</td>
+</tr>
+<tr>
+<td class="c-short">Return</td>
+<td>A parent message whose sender is the child, else the first parent card after the child ends</td>
+<td>Purple dashed (lighter when inferred)</td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-sec-2-3" href="#sec-2-3" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="2.4" data-label="Module details" data-anchor="sec-2-4">
+<div class="sub-head"><span class="n">2.4</span><h3 id="sec-2-4">Module details</h3></div>
+<p>The source is 1,575 lines in four modules. The built bundle has 1,599 lines because the build adds a wrapper around them.</p>
+<figure class="fig" style="margin-left:0;margin-right:0"><div class="small-label fig-title">Lines of source by file</div>
+  <svg class="chart" viewBox="0 0 660 178" role="img" font-family="Inter, system-ui, sans-serif" font-size="11" aria-label="Horizontal bar chart of lines per source file: ui.js 672, model.js 642, plugin.js 135, styles.js 126."><text x="0.0" y="12.0" font-size="11" fill="#64748B" text-anchor="start" font-weight="400" >lines</text><line x1="106.9" x2="106.9" y1="28" y2="152" stroke="#E2E8F0" stroke-width="1"/><text x="106.9" y="168.0" font-size="11" fill="#64748B" text-anchor="middle" font-weight="400" >0</text><line x1="235.2" x2="235.2" y1="28" y2="152" stroke="#E2E8F0" stroke-width="1"/><text x="235.2" y="168.0" font-size="11" fill="#64748B" text-anchor="middle" font-weight="400" >200</text><line x1="363.5" x2="363.5" y1="28" y2="152" stroke="#E2E8F0" stroke-width="1"/><text x="363.5" y="168.0" font-size="11" fill="#64748B" text-anchor="middle" font-weight="400" >400</text><line x1="491.7" x2="491.7" y1="28" y2="152" stroke="#E2E8F0" stroke-width="1"/><text x="491.7" y="168.0" font-size="11" fill="#64748B" text-anchor="middle" font-weight="400" >600</text><line x1="620.0" x2="620.0" y1="28" y2="152" stroke="#E2E8F0" stroke-width="1"/><text x="620.0" y="168.0" font-size="11" fill="#64748B" text-anchor="middle" font-weight="400" >800</text><line x1="106.9" x2="106.9" y1="28" y2="152" stroke="#94A3B8" stroke-width="1"/><text x="92.9" y="47.5" font-size="11" fill="#334155" text-anchor="end" font-weight="400" >src/ui.js</text><rect x="106.9" y="34.5" width="431.0" height="18" rx="3" fill="#0F766E"><title>src/ui.js: 672</title></rect><text x="543.9" y="47.5" font-size="11" fill="#0F172A" text-anchor="start" font-weight="600" >672</text><text x="92.9" y="78.5" font-size="11" fill="#334155" text-anchor="end" font-weight="400" >src/model.js</text><rect x="106.9" y="65.5" width="411.7" height="18" rx="3" fill="#0F766E"><title>src/model.js: 642</title></rect><text x="524.7" y="78.5" font-size="11" fill="#0F172A" text-anchor="start" font-weight="600" >642</text><text x="92.9" y="109.5" font-size="11" fill="#334155" text-anchor="end" font-weight="400" >src/plugin.js</text><rect x="106.9" y="96.5" width="86.6" height="18" rx="3" fill="#0F766E"><title>src/plugin.js: 135</title></rect><text x="199.5" y="109.5" font-size="11" fill="#0F172A" text-anchor="start" font-weight="600" >135</text><text x="92.9" y="140.5" font-size="11" fill="#334155" text-anchor="end" font-weight="400" >src/styles.js</text><rect x="106.9" y="127.5" width="80.8" height="18" rx="3" fill="#0F766E"><title>src/styles.js: 126</title></rect><text x="193.7" y="140.5" font-size="11" fill="#0F172A" text-anchor="start" font-weight="600" >126</text></svg><figcaption class="cap"><b>Figure 2.</b> Lines per source file at commit 14e58df.</figcaption>
+</figure><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose and key logic</th>
+<th>Main exports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="c-short">src/model.js</td>
+<td>Tree loading, event folding, spawn linking, row assignment, totals; no DOM</td>
+<td>loadTree, foldSession, buildGraph, totals</td>
+</tr>
+<tr>
+<td class="c-short">src/ui.js</td>
+<td>Canvas with pan and zoom, cards, orthogonal edge routing, detail panel, error boundary</td>
+<td>LineageGraph, LineageTab, LineagePage, LineageIcon</td>
+</tr>
+<tr>
+<td>src/plugin.js</td>
+<td>Remote adapter, root resolution, slot registrations, labels in 5 languages</td>
+<td>apply, inject</td>
+</tr>
+<tr>
+<td>src/styles.js</td>
+<td>Theme-aware CSS using the shell's design tokens</td>
+<td class="c-short">STYLES</td>
+</tr>
+<tr>
+<td>scripts/build.mjs</td>
+<td>Joins the four modules into the DSH ModuleLoader format</td>
+<td class="c-short">(script)</td>
+</tr>
+<tr>
+<td class="c-short">demo/</td>
+<td>Standalone page that runs the real bundle on synthetic data</td>
+<td class="c-short">(page)</td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-sec-2-4" href="#sec-2-4" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="2.5" data-label="Tests" data-anchor="sec-2-5">
+<div class="sub-head"><span class="n">2.5</span><h3 id="sec-2-5">Tests</h3></div>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Check</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Render test (jsdom)</td>
+<td>14 assertions: slots, lanes, edges, detail, links, turn filter, collapse, page</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+</tr>
+<tr>
+<td>Offline fold on real logs</td>
+<td>test-offline.mjs replays sessions from ~/.dsh/sessions</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+</tr>
+<tr>
+<td>Real subagent run</td>
+<td>A delegated child in the author's session appears as its own lane with spawn and return edges</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+</tr>
+<tr>
+<td class="c-short">Visual check</td>
+<td>Headless Chromium screenshots of the demo, light theme</td>
+<td class="c-status"><span class="badge b-warn">Partial</span></td>
+</tr>
+<tr>
+<td>Live GUI check</td>
+<td>Plugin installed and mounted; not yet viewed in an authenticated browser</td>
+<td class="c-status"><span class="badge b-muted">Not measured</span></td>
+</tr>
+<tr>
+<td>Unit tests per function</td>
+<td>No test framework</td>
+<td class="c-status"><span class="badge b-muted">None</span></td>
+</tr>
+<tr>
+<td class="c-short">CI pipeline</td>
+<td>No CI configuration</td>
+<td class="c-status"><span class="badge b-muted">None</span></td>
+</tr>
+</tbody>
+</table>
+<p>The render test loads <code class="nw">lib/client.js</code> the same way the shell does, through a stand-in module loader and a fake client context, so it exercises the shipped bundle rather than the sources. The remaining gap is the live GUI check (see <a href="#q1" class="ref">Q1</a>).</p>
+
+<a class="sec-end" id="end-sec-2-5" href="#sec-2-5" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="2.6" data-label="Results" data-anchor="sec-2-6">
+<div class="sub-head"><span class="n">2.6</span><h3 id="sec-2-6">Results</h3></div>
+<div class="kpis cols-4">
+  <div class="kpi"><div class="v">5 / 7</div><div class="l">objectives delivered</div></div>
+  <div class="kpi"><div class="v">2 / 7</div><div class="l">objectives partial</div></div>
+  <div class="kpi"><div class="v">67.8 kB</div><div class="l">bundle, no dependencies</div></div>
+  <div class="kpi"><div class="v">14</div><div class="l">render test assertions</div></div>
+</div><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Objective</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="c-id"><a class="id ref" href="#o1">O1</a></td>
+<td>Per-chat lineage</td>
+<td class="c-status"><span class="badge b-warn">Partial</span></td>
+<td>Tab registered and render-tested; not yet seen in the live GUI (<a href="#q1" class="ref">Q1</a>)</td>
+</tr>
+<tr>
+<td class="c-id"><a class="id ref" href="#o2">O2</a></td>
+<td>Sidebar entry</td>
+<td class="c-status"><span class="badge b-warn">Partial</span></td>
+<td>Panel button at order 11 after Automation tasks (order 10); same live check pending</td>
+</tr>
+<tr>
+<td class="c-id"><a class="id ref" href="#o3">O3</a></td>
+<td>Subagent branches</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+<td>Demo with 5 agents across 3 levels; real child lane from the author's session</td>
+</tr>
+<tr>
+<td class="c-id"><a class="id ref" href="#o4">O4</a></td>
+<td class="c-short">Step details</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+<td>Detail panel shows text, reasoning, tool arguments, results, duration and tokens</td>
+</tr>
+<tr>
+<td class="c-id"><a class="id ref" href="#o5">O5</a></td>
+<td class="c-short">Turn focus</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+<td>Filter keeps the turn plus feeding subagents (11 of 20 cards in the test)</td>
+</tr>
+<tr>
+<td class="c-id"><a class="id ref" href="#o6">O6</a></td>
+<td class="c-short">Read only</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+<td>Only session/list, session/page and session/projections are called</td>
+</tr>
+<tr>
+<td class="c-id"><a class="id ref" href="#o7">O7</a></td>
+<td>No build toolchain</td>
+<td class="c-status"><span class="badge b-good">Delivered</span></td>
+<td>build.mjs concatenates modules; no runtime dependencies</td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-sec-2-6" href="#sec-2-6" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="2.7" data-label="Future improvements" data-anchor="sec-2-7">
+<div class="sub-head"><span class="n">2.7</span><h3 id="sec-2-7">Future improvements</h3></div>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Priority</th>
+<th>Effort</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr id="b1">
+<td class="c-id"><span class="id">B1</span></td>
+<td>Confirm both entry points in a live DSH browser session</td>
+<td class="c-status"><span class="badge b-crit">High</span></td>
+<td class="c-short">S</td>
+<td><a href="#o1" class="ref">O1</a> and <a href="#o2" class="ref">O2</a> are only render-tested (<a href="#q1" class="ref">Q1</a>)</td>
+</tr>
+<tr id="b2">
+<td class="c-id"><span class="id">B2</span></td>
+<td>Incremental reads with session/follow instead of full reloads</td>
+<td class="c-status"><span class="badge b-crit">High</span></td>
+<td class="c-short">M</td>
+<td>Each refresh reads every log in full (<a href="#r1" class="ref">R1</a>)</td>
+</tr>
+<tr id="b3">
+<td class="c-id"><span class="id">B3</span></td>
+<td>Unit tests for foldSession and buildGraph, plus CI</td>
+<td class="c-status"><span class="badge b-warn">Medium</span></td>
+<td class="c-short">M</td>
+<td>Only scripted end-to-end checks exist (<a href="#r4" class="ref">R4</a>)</td>
+</tr>
+<tr id="b4">
+<td class="c-id"><span class="id">B4</span></td>
+<td>Show workflow and code-mode sub-calls as their own cards</td>
+<td class="c-status"><span class="badge b-warn">Medium</span></td>
+<td class="c-short">M</td>
+<td>Nested calls are summarised in one step</td>
+</tr>
+<tr id="b5">
+<td class="c-id"><span class="id">B5</span></td>
+<td>Translate all UI text, not only the tab and button labels</td>
+<td class="c-status"><span class="badge b-good">Low</span></td>
+<td class="c-short">S</td>
+<td>Panel and toolbar text is English</td>
+</tr>
+<tr id="b6">
+<td class="c-id"><span class="id">B6</span></td>
+<td>Export the graph as SVG or PNG</td>
+<td class="c-status"><span class="badge b-good">Low</span></td>
+<td class="c-short">S</td>
+<td>Useful for reports and reviews</td>
+</tr>
+<tr id="b7">
+<td class="c-id"><span class="id">B7</span></td>
+<td>Publish to npm and the DSH plugin index</td>
+<td class="c-status"><span class="badge b-warn">Medium</span></td>
+<td class="c-short">S</td>
+<td>Install currently needs a git clone (<a href="#q3" class="ref">Q3</a>)</td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-sec-2-7" href="#sec-2-7" aria-hidden="true" tabindex="-1"></a>
+</section>
+</section>
+<section class="chapter">
+<div class="sec-head"><div class="sec-num">03</div><div><h2 id="sec-3">Risks and open questions</h2><a class="anchor-ref" href="#sec-3" aria-hidden="true" tabindex="-1"></a><p class="lead">Known risks and open questions, referenced by stable IDs.</p></div></div>
+<section class="doc-section" data-sec="Risks" data-label="Risks" data-anchor="risks">
+<div class="sub-head"><h3 id="risks">Risks</h3></div>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Risk</th>
+<th>Impact</th>
+<th>Mitigation</th>
+<th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr id="r1">
+<td class="c-id"><span class="id">R1</span></td>
+<td>Very long or deep trees are read in full on every refresh</td>
+<td>Slow loading and Host load in live mode</td>
+<td>Live refresh runs only while an agent is running; add incremental reads (<a href="#b2" class="ref">B2</a>)</td>
+<td class="c-status"><span class="badge b-warn">Medium</span></td>
+</tr>
+<tr id="r2">
+<td class="c-id"><span class="id">R2</span></td>
+<td>The plugin relies on internal DSH slot and event names</td>
+<td>A DSH release can break the view</td>
+<td>Error boundary keeps the GUI usable; track DSH releases (<a href="#q2" class="ref">Q2</a>)</td>
+<td class="c-status"><span class="badge b-crit">High</span></td>
+</tr>
+<tr id="r3">
+<td class="c-id"><span class="id">R3</span></td>
+<td>A spawn edge is inferred from timing when no tool result names the child</td>
+<td>Edge may point at a nearby step</td>
+<td>Rule order prefers explicit ids; inferred returns are drawn lighter</td>
+<td class="c-status"><span class="badge b-good">Low</span></td>
+</tr>
+<tr id="r4">
+<td class="c-id"><span class="id">R4</span></td>
+<td>No unit tests or CI</td>
+<td>Regressions found late</td>
+<td>Run test-render.cjs before each release; add <a href="#b3" class="ref">B3</a></td>
+<td class="c-status"><span class="badge b-warn">Medium</span></td>
+</tr>
+<tr id="r5">
+<td class="c-id"><span class="id">R5</span></td>
+<td>The detail panel shows full prompts and tool output</td>
+<td>Sensitive text visible on screen</td>
+<td>Same data as the chat itself; read only, nothing leaves the Host</td>
+<td class="c-status"><span class="badge b-good">Low</span></td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-risks" href="#risks" aria-hidden="true" tabindex="-1"></a>
+</section>
+<section class="doc-section" data-sec="Open questions" data-label="Open questions" data-anchor="open-questions">
+<div class="sub-head"><h3 id="open-questions">Open questions</h3></div>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Question</th>
+<th>Owner</th>
+<th>Where it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr id="q1">
+<td class="c-id"><span class="id">Q1</span></td>
+<td>Do the tab and sidebar button render as expected in a live authenticated DSH page?</td>
+<td>Vinicius Dias</td>
+<td class="c-id"><a class="id sec ref" href="#sec-2-5">2.5</a><a class="id ref" href="#o1">O1</a><a class="id ref" href="#o2">O2</a></td>
+</tr>
+<tr id="q2">
+<td class="c-id"><span class="id">Q2</span></td>
+<td>Will the conversation.view and sidebar.panellist slots stay stable across DSH 0.2 releases?</td>
+<td class="c-short">Not stated</td>
+<td class="c-id"><a class="id ref" href="#r2">R2</a></td>
+</tr>
+<tr id="q3">
+<td class="c-id"><span class="id">Q3</span></td>
+<td>Should the plugin be published on npm or a DSH plugin index?</td>
+<td>Vinicius Dias</td>
+<td class="c-id"><a class="id ref" href="#b7">B7</a></td>
+</tr>
+<tr id="q4">
+<td class="c-id"><span class="id">Q4</span></td>
+<td>What tree size should live mode support before incremental reads are required?</td>
+<td class="c-short">Not stated</td>
+<td class="c-id"><a class="id ref" href="#r1">R1</a><a class="id ref" href="#b2">B2</a></td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-open-questions" href="#open-questions" aria-hidden="true" tabindex="-1"></a>
+</section>
+</section>
+<section class="chapter">
+<div class="sec-head"><div class="sec-num">A</div><div><h2 id="sec-a">Appendix</h2><a class="anchor-ref" href="#sec-a" aria-hidden="true" tabindex="-1"></a><p class="lead">Reference material.</p></div></div>
+<section class="doc-section" data-sec="Glossary" data-label="Glossary" data-anchor="glossary">
+<div class="sub-head"><h3 id="glossary">Glossary</h3></div>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="c-short">DSH</td>
+<td>DeepSeek Harness, the agent runtime and Web GUI this plugin extends</td>
+</tr>
+<tr>
+<td class="c-short">Subagent</td>
+<td>A child agent started by another agent with subagent, subagent_fork or workflow</td>
+</tr>
+<tr>
+<td class="c-short">Lane</td>
+<td>One column of the graph, holding the cards of a single agent</td>
+</tr>
+<tr>
+<td class="c-short">Turn</td>
+<td>One prompt or trigger and all the steps until the agent stops</td>
+</tr>
+<tr>
+<td class="c-short">Step</td>
+<td>One model call plus the tool calls it made</td>
+</tr>
+<tr>
+<td class="c-short">Projection</td>
+<td>A value the Host folds from a session log, such as subagentCatalog</td>
+</tr>
+<tr>
+<td class="c-short">Slot</td>
+<td>A named place in the GUI where a plugin can register a component</td>
+</tr>
+<tr>
+<td class="c-short">Bundle patch</td>
+<td>The cordis.patch.yml layer that mounts the plugin when it is installed</td>
+</tr>
+</tbody>
+</table>
+
+<a class="sec-end" id="end-glossary" href="#glossary" aria-hidden="true" tabindex="-1"></a>
+</section>
+</section>
+</main>
+<script>
+(async function(){
+  var fonts = ["600 12pt \u0027Poppins\u0027", "700 12pt \u0027Poppins\u0027", "400 10pt Inter", "500 10pt Inter", "600 10pt Inter", "700 10pt Inter", "500 10pt \u0027JetBrains Mono\u0027", "600 10pt \u0027JetBrains Mono\u0027"];
+  try { await Promise.all(fonts.map(function(f){ return document.fonts.load(f, 'AaBb0'); })); await document.fonts.ready; } catch(e) {}
+  /* page 1 must fit one A4 page: compact progressively, fonts never go below 8pt */
+  var p = document.getElementById('page1');
+  if (p) { for (var i = 1; i <= 3 && p.scrollHeight > p.clientHeight + 1; i++) p.classList.add('compact-' + i); }
+  window.__ready = true; document.documentElement.dataset.ready = '1';
+})();
+</script>
+</body></html>
